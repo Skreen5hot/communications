@@ -91,6 +91,23 @@ def repo_slug(remote_url: str) -> str:
     return "%s/%s" % (owner, name[:-4] if name.endswith(".git") else name)
 
 
+def contents(top: Path, relative: str) -> list[tuple[str, str, str]]:
+    """(commit, blob, status) for every commit that touched the file, newest
+    first, following renames, so a move cannot hide an edit (Rule 1).
+    Status is git's: A added, M modified, R100 moved unchanged."""
+    out = git(top, "log", "--follow", "--raw", "--no-abbrev", "--format=C %H",
+              "--", relative).decode()
+    history, commit = [], None
+    for line in out.splitlines():
+        if line.startswith("C "):
+            commit = line[2:]
+        elif line.startswith(":") and commit:
+            fields = line.split()
+            history.append((commit, fields[3], fields[4]))
+            commit = None
+    return history
+
+
 def build_alert(message: Path, repo: str | None = None) -> dict:
     """The alert for a committed message file, from the commit that added it."""
     message = message.resolve()
@@ -100,14 +117,15 @@ def build_alert(message: Path, repo: str | None = None) -> dict:
     if git(top, "status", "--porcelain", "--", relative).strip():
         raise ValueError("%s is not committed as it stands; an alert names "
                          "a commit" % relative)
-    commits = git(top, "log", "--format=%H", "--", relative).split()
-    if not commits:
+    history = contents(top, relative)
+    if not history:
         raise ValueError("%s has never been committed" % relative)
-    if len(commits) > 1:
-        raise ValueError("%s has been changed by %d commits; a committed "
-                         "message never changes (Rule 1)"
-                         % (relative, len(commits)))
-    commit = commits[0].decode()
+    edits = [c[:12] for c, _, status in history if status not in ("A", "R100")]
+    if edits:
+        raise ValueError("%s was changed after it was committed (%s); a "
+                         "committed message never changes, even when it "
+                         "moves (Rule 1)" % (relative, ", ".join(edits)))
+    commit = history[0][0]  # the latest: where it sits at this path
     data = git(top, "show", "%s:%s" % (commit, relative))
     header = split_header(data)
     repo = repo or repo_slug(
