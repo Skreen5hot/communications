@@ -37,6 +37,10 @@ def main(argv=None) -> int:
     ap.add_argument("--board-json", type=Path)
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args(argv)
+    # Titles carry "→"; a Windows console's code page cannot print it.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
     discussions = (json.loads(args.board_json.read_text())
                    if args.board_json else board.fetch(args.board))
     waiting = board.unrecorded(discussions, args.code, args.record)

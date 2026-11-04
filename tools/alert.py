@@ -35,6 +35,10 @@ def main(argv=None) -> int:
                          "to one never announced")
     ap.add_argument("--board", default=board.BOARD)
     args = ap.parse_args(argv)
+    # Titles carry "→"; a Windows console's code page cannot print it.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
     try:
         alert = board.build_alert(args.message, args.repo)
     except (ValueError, board.subprocess.CalledProcessError) as exc:
