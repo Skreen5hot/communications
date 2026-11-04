@@ -1,0 +1,31 @@
+title: "[FROM→TO] <id> — <subject>"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        An alert announces a message; it is not the message (PROTOCOL.md § Alerts).
+        `python tools/alert.py <message.md>` prints the title and the block below for you.
+        A reply to a message already on the board goes as a comment on that thread instead.
+  - type: textarea
+    id: alert
+    attributes:
+      label: Alert
+      description: The YAML block from tools/alert.py, unchanged.
+      render: yaml
+      value: |
+        id:
+        from:
+        to:
+        type:
+        subject:
+        in_reply_to: null
+        requires_act: false
+        author:
+        record:
+          repo:
+          commit:
+          path:
+          sha256:
+        link:
+    validations:
+      required: true

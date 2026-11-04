@@ -1,0 +1,47 @@
+# The teams that correspond under PROTOCOL.md, by code (§ Codes).
+#
+#   code:        the team's own name for itself in ids; uppercase letters and digits
+#   name:        who the team is
+#   repository:  where its record lives (owner/name), or null if it has none
+#   aliases:     other codes existing records already use for this team
+#   delivery:    how a message reaches the team when it does not read the board itself
+#
+# This file is the authority. A record keeps using an alias it already uses;
+# a new record uses the code.
+
+teams:
+  - code: OT
+    name: Ontology Template
+    repository: Skreen5hot/Ontology-Template
+    aliases: [EXAMPLE]
+    delivery: board
+
+  - code: BCO
+    name: Business Capability Ontology
+    repository: Skreen5hot/Business-and-Agent-Capabilities-Ontology
+    aliases: []
+    delivery: through the architect
+
+  - code: BPO
+    name: Business Process Ontology
+    repository: Skreen5hot/BusinessProcessOntology
+    aliases: []
+    delivery: through the architect
+
+  - code: BPOT
+    name: BPO Testing Team
+    repository: Skreen5hot/BPO-Template-Port   # private
+    aliases: [BPOTEST]
+    delivery: through the architect
+
+  - code: SDD
+    name: Semantic Data Dictionary
+    repository: Skreen5hot/SemanticDataDictionary
+    aliases: []
+    delivery: board
+
+  - code: LEGAL
+    name: Legal counsel on licensing
+    repository: null
+    aliases: []
+    delivery: through the architect
