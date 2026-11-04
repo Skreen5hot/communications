@@ -107,6 +107,14 @@ class AlertTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Rule 1"):
             board.build_alert(self.repo.message)
 
+    def test_prints_on_a_windows_code_page(self):
+        result = subprocess.run(
+            (sys.executable, str(ROOT / "tools" / "alert.py"),
+             str(self.repo.message)), capture_output=True,
+            env={**__import__("os").environ, "PYTHONIOENCODING": "cp1252"})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("[SDD→OT]".encode(), result.stdout)
+
     def test_remote_urls(self):
         for url in ("git@github.com:Skreen5hot/communications.git",
                     "https://github.com/Skreen5hot/communications",
