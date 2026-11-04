@@ -107,6 +107,40 @@ class AlertTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Rule 1"):
             board.build_alert(self.repo.message)
 
+    def move(self, edit: bytes = b""):
+        moved = self.repo.message.parent.parent.parent / "OT2" / "outgoing"
+        moved.mkdir(parents=True)
+        target = moved / self.repo.message.name
+        run(self.repo.path, "git", "mv", str(self.repo.message), str(target))
+        if edit:
+            target.write_bytes(MESSAGE + edit)
+        run(self.repo.path, "git", "commit", "-qam", "move")
+        return target
+
+    def test_a_move_with_the_same_bytes_is_accepted(self):
+        target = self.move()
+        alert = board.build_alert(target)
+        self.assertEqual(alert["record"]["sha256"],
+                         hashlib.sha256(MESSAGE).hexdigest())
+        self.assertTrue(alert["record"]["path"].startswith(
+            "communications/OT2/"))
+        head = subprocess.run(("git", "rev-parse", "HEAD"), cwd=self.repo.path,
+                              capture_output=True, text=True).stdout.strip()
+        self.assertEqual(alert["record"]["commit"], head)
+
+    def test_a_move_that_edits_is_refused(self):
+        target = self.move(b"tidied on the way\n")
+        with self.assertRaisesRegex(ValueError, "even when it moves"):
+            board.build_alert(target)
+
+    def test_an_edit_reverted_is_still_an_edit(self):
+        self.repo.message.write_bytes(MESSAGE + b"tidied\n")
+        run(self.repo.path, "git", "commit", "-qam", "edit")
+        self.repo.message.write_bytes(MESSAGE)
+        run(self.repo.path, "git", "commit", "-qam", "revert")
+        with self.assertRaisesRegex(ValueError, "Rule 1"):
+            board.build_alert(self.repo.message)
+
     def test_prints_on_a_windows_code_page(self):
         result = subprocess.run(
             (sys.executable, str(ROOT / "tools" / "alert.py"),

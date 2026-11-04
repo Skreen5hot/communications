@@ -1,6 +1,6 @@
 # The communications protocol
 
-**Version 1.0** · the canonical text · changes are listed in [`CHANGELOG.md`](CHANGELOG.md)
+**Version 1.1** · the canonical text · changes are listed in [`CHANGELOG.md`](CHANGELOG.md)
 
 How the Skreen5hot projects record what they say to, and hear from, each other, and how
 they alert each other that something was said. Every project that corresponds keeps its own
@@ -76,8 +76,13 @@ digest of the body and requires it to equal `source.sha256`. A copy that has bee
 ## Rules
 
 1. **A committed message never changes.** A correction is a new message whose `in_reply_to`
-   names the message it corrects. A checker reads git history and refuses a message file
-   that more than one commit has touched.
+   names the message it corrects. A checker reads git history, following renames, and
+   refuses a message whose bytes more than one commit has set.
+   - A message may *move* (when a team folder is renamed, for example), but only with
+     its bytes unchanged. A rename that also edits the message is a change, wherever the
+     message now lives.
+   - A message is never deleted. A file that was never a message (one with no header,
+     or an empty file) may be removed, and the commit that removes it says so.
 2. **Status is derived, not written.** A `request` or `finding` is *open* until a later
    message answers it (its `in_reply_to` is the id) with type `answer` or
    `acknowledgment`. There is no status field to forget to update.
@@ -94,6 +99,12 @@ digest of the body and requires it to equal `source.sha256`. A copy that has bee
 6. **Sending is outside the record.** An outgoing message is the record of what was said.
    It is announced on the board (§ Alerts), and it may also reach the team some other way.
    The record does not claim delivery. An alert does not claim it either.
+7. **Digests are of committed bytes.** Every SHA-256 in this protocol (in a ref, a
+   `source`, an alert, or an adoption pin) is computed over the bytes as committed, read
+   with `git show <commit>:<path>`. It is never computed over a working copy, because git
+   can rewrite line endings on checkout (on Windows, for example). A record stores its
+   `communications/` folder byte for byte, so that an incoming copy is committed exactly
+   as received (§ Adopting).
 
 ## Codes
 
@@ -119,7 +130,8 @@ waiting. It is not the message.
    acknowledgment) is announced as a comment on that same Discussion. Anyone who has taken
    part in a thread is then notified of the rest of it. A reply to a message that was
    never announced (one sent before the board existed, for example) opens its own
-   Discussion.
+   Discussion. A message sent before the board existed needs no alert. It may be
+   announced later, with `tools/alert.py --new-thread` if it is a reply.
 2. **The title carries the ids:** `[FROM→TO] <id> — <subject>`, using the root message's
    id. A search on a code or an id then finds the thread.
 3. **The alert is a YAML block** with the message's header fields and its exact location
@@ -183,9 +195,19 @@ A project's `communications/README.md` names the version it follows, the way a r
 a file:
 
 ```markdown
-This record follows the communications protocol, version 1.0:
+This record follows the communications protocol, version 1.1:
 Skreen5hot/communications, PROTOCOL.md at <commit>, sha256 <digest>.
 ```
+
+The project's `.gitattributes` has this line, so git never converts the record's line
+endings (Rule 7):
+
+```gitattributes
+communications/** -text
+```
+
+This repository has the same line for all of its files (`* -text`), so `PROTOCOL.md`
+digests to its published value on every machine.
 
 It may add rules of its own, provided they do not contradict these, and it states those
 rules there. Adopting a later version is a commit that changes those lines.

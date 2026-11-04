@@ -3,6 +3,24 @@
 Versions of [`PROTOCOL.md`](PROTOCOL.md). Each version is tagged `protocol-v<version>` and
 published as a GitHub Release.
 
+## 1.1 — 2026-11-04
+
+These come from the first adoption, by SDD. Every record that satisfied 1.0 still satisfies 1.1.
+
+- **Rule 1, moves and deletions.** A checker follows renames, and a message may move only
+  with its bytes unchanged. Before 1.1, counting commits by path meant a rename gave a
+  message a fresh history, so a rename that also edited it went unnoticed. A message is
+  never deleted. A file that was never a message may be, and the commit that removes it
+  says so.
+- **Rule 7, digests are of committed bytes.** On a Windows checkout with CRLF line
+  endings, `PROTOCOL.md` on disk did not match its published digest. Digests are now
+  always computed with `git show`. Records keep `communications/` byte for byte
+  (`communications/** -text`), and so does this repository (`* -text`).
+- **Alerts.** A message sent before the board existed needs no alert.
+- **Tools.** `alert.py` follows renames: a byte-identical move is accepted, and a move
+  that also edits the message is refused. The alert names the latest commit at which
+  the message sits at its current path.
+
 ## 1.0 — 2026-11-04
 
 The first canonical version. It is the protocol from `Skreen5hot/Ontology-Template`,
