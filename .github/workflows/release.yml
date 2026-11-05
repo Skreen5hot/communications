@@ -1,0 +1,22 @@
+name: release
+# Publishes every protocol version in CHANGELOG.md that has no release yet,
+# and announces the newest in the Protocol category (PROTOCOL.md § Changing
+# the protocol). Safe to re-run: a version already tagged is skipped.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+  discussions: write
+concurrency: release
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: python tools/release.py
+        env:
+          GH_TOKEN: ${{ github.token }}

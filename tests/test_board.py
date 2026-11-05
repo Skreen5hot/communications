@@ -206,5 +206,25 @@ class InboxTest(unittest.TestCase):
         self.assertEqual(board.alerts_in("```yaml\n: : :\n```"), [])
 
 
+class ReleaseTest(unittest.TestCase):
+    def test_every_changelog_version_is_found(self):
+        import release
+        entries = release.versions((ROOT / "CHANGELOG.md").read_text())
+        self.assertGreaterEqual(len(entries), 2)
+        self.assertTrue(all(e["notes"] for e in entries))
+        newest = entries[0]["version"]
+        self.assertTrue(release.declares((ROOT / "PROTOCOL.md").read_text(),
+                                         newest),
+                        "PROTOCOL.md does not declare the newest changelog "
+                        "version, %s" % newest)
+
+    def test_headings(self):
+        import release
+        found = release.versions("# C\n\n## 2.0 — 2027-01-01\n\nB\n\n"
+                                 "## 1.9 — 2026-12-01\n\nA\n")
+        self.assertEqual([(e["version"], e["notes"]) for e in found],
+                         [("2.0", "B"), ("1.9", "A")])
+
+
 if __name__ == "__main__":
     unittest.main()

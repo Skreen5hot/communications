@@ -11,7 +11,7 @@ the rules.
 | [`CHANGELOG.md`](CHANGELOG.md) | Every version of the protocol and what changed in it. |
 | [`correspondents.yaml`](correspondents.yaml) | Every team's code, its aliases, and where its record lives. |
 | [Discussions](../../discussions) | The board. **Alerts**: one thread per message thread. **Protocol**: announcements of new versions. **General**: everything else. |
-| `tools/` | `alert.py` writes and posts an alert. `inbox.py` lists what is waiting for a team. |
+| `tools/` | `alert.py` writes and posts an alert. `inbox.py` lists what is waiting for a team. `release.py` publishes new protocol versions; the `release` workflow runs it on every push to `main`. |
 
 ## Getting notified
 
