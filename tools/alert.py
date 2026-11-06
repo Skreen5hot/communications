@@ -48,8 +48,10 @@ def main(argv=None) -> int:
              for n in [t["code"], *(t.get("aliases") or [])]}
     for side in ("from", "to"):
         if alert[side] not in known:
-            print("alert: warning: %s %r is not in correspondents.yaml"
-                  % (side, alert[side]), file=sys.stderr)
+            print("alert: note: %s %r is not in correspondents.yaml yet%s"
+                  % (side, alert[side],
+                     "; posting this alert registers it" if side == "from"
+                     else ""), file=sys.stderr)
     if not args.post:
         print(board.title(alert))
         print()

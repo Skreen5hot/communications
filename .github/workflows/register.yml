@@ -1,0 +1,34 @@
+name: register
+# A team registers by announcing its first message (PROTOCOL.md § Codes).
+# Whenever something is posted on the board, read every alert and add any
+# new code to correspondents.yaml, then commit it to main. Idempotent.
+on:
+  discussion:
+    types: [created, edited]
+  discussion_comment:
+    types: [created, edited]
+  workflow_dispatch:
+permissions:
+  contents: write
+  discussions: read
+concurrency: register
+jobs:
+  register:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python tools/register.py | tee register.log
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Commit any new team or alias
+        run: |
+          git diff --quiet -- correspondents.yaml && exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          { echo "Register from the board"; echo; grep -E '^(register|alias) ' register.log; } > msg
+          git commit -q -F msg -- correspondents.yaml
+          git push origin HEAD:main

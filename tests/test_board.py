@@ -206,6 +206,71 @@ class InboxTest(unittest.TestCase):
         self.assertEqual(board.alerts_in("```yaml\n: : :\n```"), [])
 
 
+def fake_alert(code, repo, mid="X-Y-2026-11-06-a"):
+    return {"id": mid, "from": code, "to": "OT", "type": "notice",
+            "subject": "s", "in_reply_to": None, "requires_act": False,
+            "author": "a", "link": "l",
+            "record": {"repo": repo, "commit": "0" * 40, "path": "p",
+                       "sha256": "0" * 64}}
+
+
+class RegisterTest(unittest.TestCase):
+    def setUp(self):
+        import register
+        self.register = register
+        self.text = (ROOT / "correspondents.yaml").read_text()
+        self.teams = yaml.safe_load(self.text)["teams"]
+
+    def run_plan(self, *alerts):
+        return self.register.plan(self.teams, list(alerts))
+
+    def test_names(self):
+        name = self.register.display_name
+        self.assertEqual(name("Skreen5hot/edge-project-store"),
+                         "Edge Project Store")
+        self.assertEqual(name("Skreen5hot/SemanticDataDictionary"),
+                         "Semantic Data Dictionary")
+
+    def test_a_new_team_registers_and_the_file_stays_valid(self):
+        new, aliases, clashes = self.run_plan(
+            fake_alert("EPS", "Skreen5hot/edge-project-store"),
+            fake_alert("EPS", "Skreen5hot/edge-project-store", "second"))
+        self.assertEqual([t["code"] for t in new], ["EPS"])
+        self.assertEqual((aliases, clashes), ([], []))
+        text = self.register.apply(self.text, new, aliases)
+        self.assertTrue(text.startswith(self.text))  # comments kept
+        path = Path(tempfile.mkdtemp()) / "c.yaml"
+        path.write_text(text)
+        self.assertEqual(board.check_correspondents(path), [])
+        eps = [t for t in board.teams(path) if t["code"] == "EPS"][0]
+        self.assertEqual((eps["name"], eps["repository"], eps["delivery"]),
+                         ("Edge Project Store",
+                          "Skreen5hot/edge-project-store", "board"))
+
+    def test_known_codes_change_nothing(self):
+        self.assertEqual(self.run_plan(
+            fake_alert("SDD", "Skreen5hot/SemanticDataDictionary"),
+            fake_alert("EXAMPLE", "Skreen5hot/Ontology-Template")),
+            ([], [], []))
+
+    def test_a_new_code_from_a_known_repository_is_an_alias(self):
+        new, aliases, _ = self.run_plan(
+            fake_alert("SDDX", "Skreen5hot/SemanticDataDictionary"))
+        self.assertEqual(new, [])
+        text = self.register.apply(self.text, new, aliases)
+        path = Path(tempfile.mkdtemp()) / "c.yaml"
+        path.write_text(text)
+        self.assertEqual(board.names_for("SDDX", path), {"SDD", "SDDX"})
+        self.assertEqual(board.names_for("OT", path), {"OT", "EXAMPLE"})
+
+    def test_a_known_code_from_another_repository_is_a_clash(self):
+        new, aliases, clashes = self.run_plan(
+            fake_alert("SDD", "Someone/else"))
+        self.assertEqual((new, aliases), ([], []))
+        self.assertIn("registered to Skreen5hot/SemanticDataDictionary",
+                      clashes[0])
+
+
 class ReleaseTest(unittest.TestCase):
     def test_every_changelog_version_is_found(self):
         import release

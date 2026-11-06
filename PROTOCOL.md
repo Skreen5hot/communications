@@ -1,6 +1,6 @@
 # The communications protocol
 
-**Version 1.1** · the canonical text · changes are listed in [`CHANGELOG.md`](CHANGELOG.md)
+**Version 1.2** · the canonical text · changes are listed in [`CHANGELOG.md`](CHANGELOG.md)
 
 How the Skreen5hot projects record what they say to, and hear from, each other, and how
 they alert each other that something was said. Every project that corresponds keeps its own
@@ -117,8 +117,24 @@ itself. For example, the Ontology Template's record calls the template `EXAMPLE`
 SDD team calls it `OT`. Those other names are listed as the team's `aliases`. A record may
 keep using an alias it already uses. A new record uses the code.
 
-Adding a team means adding an entry to `correspondents.yaml` here and adding the team
-folder in each record that corresponds with it.
+**A team registers by speaking.** Its first alert on the board adds it to
+`correspondents.yaml`. Nobody edits the file to onboard a team. The `register` workflow
+reads every alert whenever something is posted, and treats the repository as the team's
+identity:
+
+- A new code from a repository not yet listed becomes a new team. Its code is the alert's
+  `from`, its repository is `record.repo`, its name comes from the repository's name, and
+  its delivery is `board`.
+- A new code from a repository already listed becomes an alias of that team.
+- A listed code arriving from a different repository is a clash. It is not registered,
+  and the workflow raises it for a person to resolve.
+
+The first repository to announce a code holds it. Choose a code no other team uses
+(check the file) before sending your first message.
+
+A person edits the file only for what an alert cannot say: a better name, a team with no
+repository or one reached `through the architect`, or a clash. Each record still adds a
+team folder for each team it corresponds with.
 
 ## Alerts
 

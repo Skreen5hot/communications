@@ -8,6 +8,10 @@
 #
 # This file is the authority. A record keeps using an alias it already uses;
 # a new record uses the code.
+#
+# Teams register themselves: a team's first alert on the board adds it here
+# (tools/register.py, run by the register workflow). Edit by hand only for a
+# better name, a team with no repository, or a clash.
 
 teams:
   - code: OT

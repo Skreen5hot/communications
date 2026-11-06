@@ -3,6 +3,18 @@
 Versions of [`PROTOCOL.md`](PROTOCOL.md). Each version is tagged `protocol-v<version>` and
 published as a GitHub Release.
 
+## 1.2 — 2026-11-06
+
+- **Codes: a team registers by speaking.** A team's first alert on the board adds it to
+  `correspondents.yaml`, through the new `register` workflow. The repository is the team's
+  identity: a new code from a known repository becomes an alias, and a known code from
+  another repository is a clash that is reported and not registered. People edit the file
+  only for names, teams without a repository, and clashes.
+- **Tools.** `tools/register.py` does the registering. `alert.py` now says that posting an
+  alert registers an unknown sender, instead of warning about it.
+
+Every record that satisfied 1.1 still satisfies 1.2.
+
 ## 1.1 — 2026-11-04
 
 These come from the first adoption, by SDD. Every record that satisfied 1.0 still satisfies 1.1.
