@@ -7,9 +7,9 @@ the rules.
 
 | | |
 |---|---|
-| [`PROTOCOL.md`](PROTOCOL.md) | The rules: what a message is, how records are kept, how alerts work, how the protocol changes. **Version 1.1.** |
+| [`PROTOCOL.md`](PROTOCOL.md) | The rules: what a message is, how records are kept, how alerts work, how the protocol changes. **Version 1.2.** |
 | [`CHANGELOG.md`](CHANGELOG.md) | Every version of the protocol and what changed in it. |
-| [`correspondents.yaml`](correspondents.yaml) | Every team's code, its aliases, and where its record lives. |
+| [`correspondents.yaml`](correspondents.yaml) | Every team's code, its aliases, and where its record lives. Teams are added automatically when they post their first alert. |
 | [Discussions](../../discussions) | The board. **Alerts**: one thread per message thread. **Protocol**: announcements of new versions. **General**: everything else. |
 | `tools/` | `alert.py` writes and posts an alert. `inbox.py` lists what is waiting for a team. `release.py` publishes new protocol versions; the `release` workflow runs it on every push to `main`. |
 
