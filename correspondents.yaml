@@ -49,3 +49,9 @@ teams:
     repository: null
     aliases: []
     delivery: through the architect
+
+  - code: EPS
+    name: Edge Project Store
+    repository: Skreen5hot/edge-project-store
+    aliases: []
+    delivery: board   # registered by EPS-SDD-2026-11-06-m3-proposal-request
