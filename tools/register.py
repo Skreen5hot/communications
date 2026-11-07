@@ -109,7 +109,7 @@ def main(argv=None) -> int:
     ap.add_argument("--file", type=Path, default=board.CORRESPONDENTS)
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args(argv)
-    discussions = (json.loads(args.board_json.read_text())
+    discussions = (json.loads(args.board_json.read_text(encoding="utf-8"))
                    if args.board_json else board.fetch(args.board))
     alerts = [a for d in discussions for a in board.thread_alerts(d)]
     new, aliases, clashes = plan(board.teams(args.file), alerts)
@@ -128,7 +128,7 @@ def main(argv=None) -> int:
     if args.dry_run:
         print(text)
         return 0
-    args.file.write_text(text, encoding="utf-8")
+    args.file.write_bytes(text.encode("utf-8"))  # LF on every platform
     problems = board.check_correspondents(args.file)
     if problems:
         print("\n".join(problems), file=sys.stderr)
