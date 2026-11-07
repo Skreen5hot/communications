@@ -41,7 +41,7 @@ def main(argv=None) -> int:
     for stream in (sys.stdout, sys.stderr):
         if hasattr(stream, "reconfigure"):
             stream.reconfigure(encoding="utf-8")
-    discussions = (json.loads(args.board_json.read_text())
+    discussions = (json.loads(args.board_json.read_text(encoding="utf-8"))
                    if args.board_json else board.fetch(args.board))
     waiting = board.unrecorded(discussions, args.code, args.record)
     if args.json:

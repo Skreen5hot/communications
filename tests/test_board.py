@@ -72,7 +72,7 @@ class CorrespondentsTest(unittest.TestCase):
 
     def test_discussion_template_is_yaml(self):
         for path in (ROOT / ".github" / "DISCUSSION_TEMPLATE").glob("*.yml"):
-            self.assertIsInstance(yaml.safe_load(path.read_text()), dict)
+            self.assertIsInstance(yaml.safe_load(path.read_text(encoding="utf-8")), dict)
 
 
 class AlertTest(unittest.TestCase):
@@ -172,14 +172,23 @@ class InboxTest(unittest.TestCase):
         incoming.mkdir(parents=True, exist_ok=True)
         header = {"id": "SDD-EXAMPLE-2026-10-27-x", "source": {
             "repo": "r", "commit": "0" * 40, "path": "p", "sha256": digest}}
-        (incoming / "2026-10-27-x.md").write_text(
-            "---\n%s---\n\nbody\n" % yaml.safe_dump(header))
+        (incoming / "2026-10-27-x.md").write_bytes(
+            ("---\n%s---\n\nbody\n" % yaml.safe_dump(header)).encode())
 
     def test_waiting_until_recorded(self):
         waiting = board.unrecorded(self.discussions, "OT", self.record)
         self.assertEqual([a["id"] for a in waiting], [self.alert["id"]])
         self.assertEqual(waiting[0]["_discussion"], "https://example.org/d/1")
         self.receive("sdd", self.alert["record"]["sha256"])
+        self.assertEqual(board.unrecorded(self.discussions, "OT",
+                                          self.record), [])
+
+    def test_a_copy_with_windows_line_endings_counts(self):
+        incoming = self.record / "sdd" / "incoming"
+        incoming.mkdir(parents=True)
+        (incoming / "2026-10-27-x.md").write_bytes(
+            b"---\r\nid: x\r\nsource:\r\n  sha256: %s\r\n---\r\n\r\nbody\r\n"
+            % self.alert["record"]["sha256"].encode())
         self.assertEqual(board.unrecorded(self.discussions, "OT",
                                           self.record), [])
 
@@ -218,7 +227,7 @@ class RegisterTest(unittest.TestCase):
     def setUp(self):
         import register
         self.register = register
-        self.text = (ROOT / "correspondents.yaml").read_text()
+        self.text = (ROOT / "correspondents.yaml").read_text(encoding="utf-8")
         self.teams = yaml.safe_load(self.text)["teams"]
 
     def run_plan(self, *alerts):
@@ -232,20 +241,20 @@ class RegisterTest(unittest.TestCase):
                          "Semantic Data Dictionary")
 
     def test_a_new_team_registers_and_the_file_stays_valid(self):
+        # A code and repository the live file cannot already hold.
         new, aliases, clashes = self.run_plan(
-            fake_alert("EPS", "Skreen5hot/edge-project-store"),
-            fake_alert("EPS", "Skreen5hot/edge-project-store", "second"))
-        self.assertEqual([t["code"] for t in new], ["EPS"])
+            fake_alert("ZZTEST", "Example/zz-test-team"),
+            fake_alert("ZZTEST", "Example/zz-test-team", "second"))
+        self.assertEqual([t["code"] for t in new], ["ZZTEST"])
         self.assertEqual((aliases, clashes), ([], []))
         text = self.register.apply(self.text, new, aliases)
         self.assertTrue(text.startswith(self.text))  # comments kept
         path = Path(tempfile.mkdtemp()) / "c.yaml"
-        path.write_text(text)
+        path.write_text(text, encoding="utf-8")
         self.assertEqual(board.check_correspondents(path), [])
-        eps = [t for t in board.teams(path) if t["code"] == "EPS"][0]
-        self.assertEqual((eps["name"], eps["repository"], eps["delivery"]),
-                         ("Edge Project Store",
-                          "Skreen5hot/edge-project-store", "board"))
+        team = [t for t in board.teams(path) if t["code"] == "ZZTEST"][0]
+        self.assertEqual((team["name"], team["repository"], team["delivery"]),
+                         ("Zz Test Team", "Example/zz-test-team", "board"))
 
     def test_known_codes_change_nothing(self):
         self.assertEqual(self.run_plan(
@@ -259,7 +268,7 @@ class RegisterTest(unittest.TestCase):
         self.assertEqual(new, [])
         text = self.register.apply(self.text, new, aliases)
         path = Path(tempfile.mkdtemp()) / "c.yaml"
-        path.write_text(text)
+        path.write_text(text, encoding="utf-8")
         self.assertEqual(board.names_for("SDDX", path), {"SDD", "SDDX"})
         self.assertEqual(board.names_for("OT", path), {"OT", "EXAMPLE"})
 
@@ -274,11 +283,11 @@ class RegisterTest(unittest.TestCase):
 class ReleaseTest(unittest.TestCase):
     def test_every_changelog_version_is_found(self):
         import release
-        entries = release.versions((ROOT / "CHANGELOG.md").read_text())
+        entries = release.versions((ROOT / "CHANGELOG.md").read_text(encoding="utf-8"))
         self.assertGreaterEqual(len(entries), 2)
         self.assertTrue(all(e["notes"] for e in entries))
         newest = entries[0]["version"]
-        self.assertTrue(release.declares((ROOT / "PROTOCOL.md").read_text(),
+        self.assertTrue(release.declares((ROOT / "PROTOCOL.md").read_text(encoding="utf-8"),
                                          newest),
                         "PROTOCOL.md does not declare the newest changelog "
                         "version, %s" % newest)

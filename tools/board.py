@@ -72,7 +72,9 @@ def split_header(data: bytes) -> dict:
     text = data.decode("utf-8")
     if not text.startswith("---"):
         raise ValueError("no YAML header")
-    _, header, _ = re.split(r"^---[ \t]*$", text, maxsplit=2, flags=re.M)
+    # A header written on Windows can end its lines with CRLF; the bytes are
+    # kept as committed (Rule 7), so the parser accepts both.
+    _, header, _ = re.split(r"^---[ \t]*\r?$", text, maxsplit=2, flags=re.M)
     value = yaml.safe_load(header)
     if not isinstance(value, dict):
         raise ValueError("header is not a mapping")
