@@ -141,6 +141,36 @@ class AlertTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Rule 1"):
             board.build_alert(self.repo.message)
 
+    def copy(self, edit: bytes = b""):
+        """A new message that repeats this one, as a correction does."""
+        target = self.repo.message.with_name(
+            "2026-10-27-cco-class-hierarchy-register-corrected.md")
+        target.write_bytes(MESSAGE.replace(
+            b"register\nfrom", b"register-corrected\nfrom") + b"\nCorrected.\n")
+        run(self.repo.path, "git", "add", ".")
+        run(self.repo.path, "git", "commit", "-qm", "correction")
+        if edit:
+            target.write_bytes(target.read_bytes() + edit)
+            run(self.repo.path, "git", "commit", "-qam", "edit")
+        return target
+
+    def test_a_copy_of_another_message_is_a_new_message(self):
+        target = self.copy()
+        statuses = [s for _, _, s in board.contents(
+            self.repo.path, target.relative_to(self.repo.path).as_posix())]
+        self.assertEqual(len(statuses), 1)
+        self.assertTrue(statuses[0] == "A" or statuses[0].startswith("C"))
+        alert = board.build_alert(target)
+        self.assertEqual(alert["record"]["sha256"],
+                         hashlib.sha256(target.read_bytes()).hexdigest())
+        self.assertEqual(alert["id"],
+                         "SDD-OT-2026-10-27-cco-class-hierarchy-register-corrected")
+
+    def test_a_copy_edited_later_is_refused(self):
+        target = self.copy(b"tidied\n")
+        with self.assertRaisesRegex(ValueError, "Rule 1"):
+            board.build_alert(target)
+
     def test_prints_on_a_windows_code_page(self):
         result = subprocess.run(
             (sys.executable, str(ROOT / "tools" / "alert.py"),

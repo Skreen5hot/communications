@@ -96,7 +96,12 @@ def repo_slug(remote_url: str) -> str:
 def contents(top: Path, relative: str) -> list[tuple[str, str, str]]:
     """(commit, blob, status) for every commit that touched the file, newest
     first, following renames, so a move cannot hide an edit (Rule 1).
-    Status is git's: A added, M modified, R100 moved unchanged."""
+    Status is git's: A added, M modified, R100 moved unchanged, C copied.
+
+    `git log --follow` also treats a *copy* (a new file resembling one that
+    still exists, such as a correction that repeats the message it corrects)
+    as if the other file's history were this one's. A copy is where this
+    file's own history starts, so the walk stops there."""
     out = git(top, "log", "--follow", "--raw", "--no-abbrev", "--format=C %H",
               "--", relative).decode()
     history, commit = [], None
@@ -107,6 +112,8 @@ def contents(top: Path, relative: str) -> list[tuple[str, str, str]]:
             fields = line.split()
             history.append((commit, fields[3], fields[4]))
             commit = None
+            if fields[4].startswith("C"):
+                break
     return history
 
 
@@ -122,7 +129,8 @@ def build_alert(message: Path, repo: str | None = None) -> dict:
     history = contents(top, relative)
     if not history:
         raise ValueError("%s has never been committed" % relative)
-    edits = [c[:12] for c, _, status in history if status not in ("A", "R100")]
+    edits = [c[:12] for c, _, status in history
+             if status not in ("A", "R100") and not status.startswith("C")]
     if edits:
         raise ValueError("%s was changed after it was committed (%s); a "
                          "committed message never changes, even when it "
